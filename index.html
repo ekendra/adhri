@@ -58,10 +58,16 @@
       border-radius:12px;
       font-weight:700;
       cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
     }
     button.primary{
       background:rgba(57,217,138,.20);
       border-color:rgba(57,217,138,.45);
+    }
+    button.danger{
+      background:rgba(255,92,92,.16);
+      border-color:rgba(255,92,92,.35);
     }
     button:active{ transform: translateY(1px); }
     .grid{
@@ -89,10 +95,26 @@
       letter-spacing:.08em;
       font-weight:900;
       min-height: 1.4em;
+      word-break: break-word;
     }
     .msg{ font-weight:700; }
     .msg.good{ color:var(--good); }
     .msg.bad{ color:var(--bad); }
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .controls .left, .controls .right{ display:flex; gap:10px; flex-wrap:wrap; }
+    .hintline{
+      margin-top:8px;
+      color:var(--muted);
+      font-size:.92rem;
+      line-height:1.35;
+    }
     .wheelWrap{
       display:grid;
       place-items:center;
@@ -135,7 +157,6 @@
       background:rgba(255,255,255,.06);
     }
     .footerNote{ margin-top:10px; color:var(--muted); font-size:.92rem; line-height:1.35; }
-    a{ color:#b9dcff; }
   </style>
 </head>
 <body>
@@ -153,7 +174,7 @@
         <button class="primary" id="newLevelBtn">New Level</button>
         <button id="shuffleBtn">Shuffle Letters</button>
         <button id="hintBtn">Hint</button>
-        <button id="resetBtn">Reset Progress</button>
+        <button class="danger" id="resetBtn">Reset Progress</button>
       </div>
     </div>
 
@@ -161,8 +182,9 @@
       <div class="panel">
         <p class="title">Calm Word Garden</p>
         <p class="sub">
-          Drag across letters to make words. Release to submit.
-          Use <span class="kbd">Hint</span> if you get stuck.
+          Make words by <b>swiping</b>, <b>tapping letters</b>, or <b>typing</b>.
+          Submit with <span class="kbd">Enter</span> or the Submit button.
+          Remove with <span class="kbd">Backspace</span>.
         </p>
 
         <div class="wordbox">
@@ -170,13 +192,23 @@
           <div class="msg" id="msg"></div>
         </div>
 
+        <div class="controls">
+          <div class="left">
+            <button id="clearBtn">Clear</button>
+            <button class="primary" id="submitBtn">Submit</button>
+          </div>
+          <div class="right">
+            <span class="tag">Mode: <span id="mode">Touch/Type</span></span>
+          </div>
+        </div>
+        <div class="hintline" id="hintline"></div>
+
         <div class="wheelWrap">
           <canvas id="wheel" width="640" height="520"></canvas>
         </div>
 
         <div class="footerNote">
-          Tip: Kids can practice spelling by saying the letters out loud as they swipe.
-          This game stores progress in the browser only (no account needed).
+          Tip: For younger kids, start with 3 to 4 letter levels first. This game stores progress in the browser only.
         </div>
       </div>
 
@@ -190,9 +222,8 @@
 
 <script>
 (() => {
-  // Educational note: This is an original implementation inspired by common word-swipe mechanics.
+  // Original, kid-safe word builder. Inspired by common word mechanics, not a clone.
 
-  // Small built-in "kid friendly" word sets. You can expand these easily.
   const LEVELS = [
     { letters: "G A R D E N", targets: ["GARDEN","RANGE","GRADE","ANGER","EARN","NEAR","RAN","AGE","DEN"] },
     { letters: "S T O R Y",   targets: ["STORY","SORT","ROTS","TOYS","TRY","TOY","SOT"] },
@@ -202,9 +233,7 @@
     { letters: "M U S I C",   targets: ["MUSIC","SUM","SIM","SIC","CUM"] }
   ];
 
-  // A tiny "allowed words" list to prevent nonsense. Keep this kid-safe and simple.
-  // For a bigger dictionary, you would load a word list file.
-  const ALLOWED = new Set(LEVELS.flatMap(l => l.targets));
+  const ALLOWED = new Set(LEVELS.flatMap(l => l.targets.map(w => w.toUpperCase())));
 
   const ui = {
     level: document.getElementById("level"),
@@ -215,10 +244,14 @@
     current: document.getElementById("currentWord"),
     msg: document.getElementById("msg"),
     targets: document.getElementById("targets"),
+    hintline: document.getElementById("hintline"),
+    mode: document.getElementById("mode"),
     newLevelBtn: document.getElementById("newLevelBtn"),
     shuffleBtn: document.getElementById("shuffleBtn"),
     hintBtn: document.getElementById("hintBtn"),
     resetBtn: document.getElementById("resetBtn"),
+    clearBtn: document.getElementById("clearBtn"),
+    submitBtn: document.getElementById("submitBtn"),
     canvas: document.getElementById("wheel")
   };
 
@@ -226,7 +259,7 @@
   const W = () => ui.canvas.width;
   const H = () => ui.canvas.height;
 
-  const storeKey = "calm_word_garden_v1";
+  const storeKey = "calm_word_garden_v2";
   const loadState = () => {
     try { return JSON.parse(localStorage.getItem(storeKey) || "null"); }
     catch { return null; }
@@ -246,15 +279,23 @@
   let found = new Set();
   let hintUsed = false;
 
-  // Wheel geometry
+  // Wheel geometry and selection
   let nodes = [];         // letter positions
-  let path = [];          // selected node indices
+  let path = [];          // selected node indices (touch mode)
   let dragging = false;
   let pointer = { x: W()/2, y: H()/2 };
+
+  // Typed/tapped word track
+  let typedWord = "";
+  let typedNodeRefs = []; // node indices used for tap-building (so Clear can unhighlight nicely)
 
   function setMessage(text, kind) {
     ui.msg.textContent = text || "";
     ui.msg.className = "msg" + (kind ? " " + kind : "");
+  }
+
+  function setHintLine(text){
+    ui.hintline.textContent = text || "";
   }
 
   function shuffleArray(arr) {
@@ -282,13 +323,18 @@
     found = new Set(already.map(normalizeWord));
 
     hintUsed = false;
-    path = [];
     dragging = false;
+    pointer = { x: W()/2, y: H()/2 };
+    path = [];
+    typedWord = "";
+    typedNodeRefs = [];
 
     layoutNodes();
     renderTargets();
     syncUI();
     setMessage("Make a word.", "");
+    setHintLine("Input: swipe, tap letters, or type. Enter submits. Backspace removes.");
+    ui.mode.textContent = "Touch/Type";
     if (fresh) saveState();
     draw();
   }
@@ -334,8 +380,16 @@
     }
   }
 
-  function wordFromPath(){
-    return path.map(idx => nodes[idx].letter).join("");
+  function currentWord(){
+    // If dragging/touch-path is active or has nodes, show that.
+    if (path.length) return normalizeWord(path.map(idx => nodes[idx].letter).join(""));
+    // Otherwise show typed/tapped word.
+    return normalizeWord(typedWord);
+  }
+
+  function refreshCurrentDisplay(){
+    const w = currentWord();
+    ui.current.textContent = w;
   }
 
   function hitNode(x,y){
@@ -351,12 +405,41 @@
     if (idx === null) return;
     if (path.includes(idx)) return;
     path.push(idx);
-    ui.current.textContent = wordFromPath();
+    typedWord = "";            // prioritize swipe path
+    typedNodeRefs = [];
+    refreshCurrentDisplay();
   }
 
-  function clearPath(){
+  function tapAddLetter(idx){
+    // Tap mode: append letter (allow repeating letters only if duplicates exist in wheel)
+    if (idx === null) return;
+    typedWord += nodes[idx].letter;
+    typedNodeRefs.push(idx);
+    path = []; // prioritize tap word
+    dragging = false;
+    ui.mode.textContent = "Tap/Type";
+    refreshCurrentDisplay();
+  }
+
+  function backspace(){
+    if (path.length){
+      path.pop();
+      refreshCurrentDisplay();
+      return;
+    }
+    if (typedWord.length){
+      typedWord = typedWord.slice(0, -1);
+      typedNodeRefs.pop();
+      refreshCurrentDisplay();
+    }
+  }
+
+  function clearAll(){
     path = [];
-    ui.current.textContent = "";
+    typedWord = "";
+    typedNodeRefs = [];
+    refreshCurrentDisplay();
+    setMessage("", "");
   }
 
   function giveStars(amount){
@@ -365,14 +448,14 @@
     saveState();
   }
 
-  function submitWord(){
-    const w = normalizeWord(wordFromPath());
+  function submit(){
+    const w = currentWord();
     if (!w) return;
 
     if (!ALLOWED.has(w)) {
       state.currentStreak = 0;
       setMessage("Not in this garden.", "bad");
-      clearPath();
+      clearAll();
       saveState();
       return;
     }
@@ -380,14 +463,14 @@
     if (!targets.includes(w)) {
       state.currentStreak = 0;
       setMessage("Good word, but not a target.", "bad");
-      clearPath();
+      clearAll();
       saveState();
       return;
     }
 
     if (found.has(w)) {
       setMessage("Already found.", "bad");
-      clearPath();
+      clearAll();
       return;
     }
 
@@ -407,7 +490,7 @@
     setMessage("Nice! +" + earned + " stars", "good");
     renderTargets();
     syncUI();
-    clearPath();
+    clearAll();
 
     if (found.size === targets.length){
       setTimeout(() => {
@@ -422,18 +505,18 @@
   }
 
   function hint(){
-    // Reveal one letter position for the next not-yet-found target word.
     const remaining = targets.filter(w => !found.has(w));
     if (!remaining.length) return;
     hintUsed = true;
     const pick = remaining[Math.floor(Math.random()*remaining.length)];
-    setMessage("Hint: A missing word has " + pick.length + " letters.", "");
+    setHintLine("Hint: One missing target word has " + pick.length + " letters.");
+    setMessage("Hint shown.", "");
   }
 
   function draw(){
     ctx.clearRect(0,0,W(),H());
 
-    // soft background sparkles
+    // background sparkles
     ctx.save();
     ctx.globalAlpha = 0.15;
     for (let i=0; i<60; i++){
@@ -446,7 +529,7 @@
     }
     ctx.restore();
 
-    // line path
+    // path line (only for swipe)
     if (path.length){
       ctx.save();
       ctx.lineWidth = 10;
@@ -468,9 +551,10 @@
 
     // nodes
     for (const node of nodes){
-      const selected = path.includes(node.i);
+      const selectedSwipe = path.includes(node.i);
+      const selectedTap = typedNodeRefs.includes(node.i) && !path.length; // show tap selection when not swiping
+      const selected = selectedSwipe || selectedTap;
 
-      // outer
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.r, 0, Math.PI*2);
       ctx.fillStyle = selected ? "rgba(57,217,138,.20)" : "rgba(255,255,255,.10)";
@@ -479,13 +563,11 @@
       ctx.strokeStyle = selected ? "rgba(57,217,138,.55)" : "rgba(255,255,255,.18)";
       ctx.stroke();
 
-      // inner glow
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.r-8, 0, Math.PI*2);
       ctx.fillStyle = selected ? "rgba(57,217,138,.12)" : "rgba(0,0,0,.15)";
       ctx.fill();
 
-      // letter
       ctx.save();
       ctx.fillStyle = "rgba(238,246,255,.95)";
       ctx.font = "900 26px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -505,46 +587,78 @@
     return { x, y };
   }
 
-  function startDrag(p){
-    dragging = true;
-    pointer = p;
-    const idx = hitNode(p.x, p.y);
-    if (idx !== null){
-      addToPath(idx);
-      setMessage("", "");
-    }
-  }
-
-  function moveDrag(p){
-    if (!dragging) return;
-    pointer = p;
-    const idx = hitNode(p.x, p.y);
-    if (idx !== null){
-      addToPath(idx);
-    }
-  }
-
-  function endDrag(){
-    if (!dragging) return;
-    dragging = false;
-    submitWord();
-  }
-
-  // events
+  // Pointer events: swipe and also tap
+  let downPoint = null;
   ui.canvas.addEventListener("pointerdown", (e) => {
     ui.canvas.setPointerCapture(e.pointerId);
-    startDrag(canvasPoint(e));
-  });
-  ui.canvas.addEventListener("pointermove", (e) => moveDrag(canvasPoint(e)));
-  ui.canvas.addEventListener("pointerup", () => endDrag());
-  ui.canvas.addEventListener("pointercancel", () => endDrag());
+    const p = canvasPoint(e);
+    downPoint = p;
+    dragging = true;
+    pointer = p;
 
+    const idx = hitNode(p.x, p.y);
+    if (idx !== null){
+      // Start swipe path (but we will treat it as a tap if user doesn't move)
+      addToPath(idx);
+      ui.mode.textContent = "Swipe";
+      setMessage("", "");
+    }
+  });
+
+  ui.canvas.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const p = canvasPoint(e);
+    pointer = p;
+
+    // If user is truly moving, stay in swipe mode
+    const idx = hitNode(p.x, p.y);
+    if (idx !== null){
+      addToPath(idx);
+    }
+  });
+
+  ui.canvas.addEventListener("pointerup", (e) => {
+    const p = canvasPoint(e);
+
+    // Detect a "tap" if movement was tiny and only 1 node was chosen
+    const moved = downPoint ? Math.hypot(p.x - downPoint.x, p.y - downPoint.y) : 999;
+    const isTap = moved < 10;
+
+    dragging = false;
+
+    if (isTap){
+      // Convert swipe-start to tap behavior:
+      // If path has at least one node, take its last as tap.
+      if (path.length){
+        const last = path[path.length - 1];
+        path = []; // clear swipe path
+        tapAddLetter(last);
+      } else {
+        const idx = hitNode(p.x, p.y);
+        if (idx !== null) tapAddLetter(idx);
+      }
+      downPoint = null;
+      return;
+    }
+
+    // Otherwise it was a swipe: submit the swipe word
+    submit();
+    downPoint = null;
+  });
+
+  ui.canvas.addEventListener("pointercancel", () => {
+    dragging = false;
+    downPoint = null;
+  });
+
+  // Buttons
   ui.shuffleBtn.addEventListener("click", () => {
     shuffleArray(letters);
     const lvl = getLevel(state.levelIndex);
     lvl.letters = letters.join(" ");
     layoutNodes();
     setMessage("Letters shuffled.", "");
+    setHintLine("Tip: You can type the word too.");
   });
 
   ui.hintBtn.addEventListener("click", () => hint());
@@ -557,6 +671,51 @@
   ui.resetBtn.addEventListener("click", () => {
     localStorage.removeItem(storeKey);
     location.reload();
+  });
+
+  ui.clearBtn.addEventListener("click", () => clearAll());
+  ui.submitBtn.addEventListener("click", () => submit());
+
+  // Keyboard typing support
+  window.addEventListener("keydown", (e) => {
+    const key = e.key;
+
+    if (key === "Enter"){
+      e.preventDefault();
+      submit();
+      return;
+    }
+    if (key === "Backspace"){
+      e.preventDefault();
+      backspace();
+      return;
+    }
+    if (key === "Escape"){
+      e.preventDefault();
+      clearAll();
+      return;
+    }
+
+    // Accept letters A-Z only
+    if (/^[a-zA-Z]$/.test(key)){
+      const ch = key.toUpperCase();
+
+      // Optional constraint: only allow letters that exist on this wheel
+      // (this keeps it "level-based" for kids)
+      if (!letters.includes(ch)){
+        setMessage("That letter is not on the wheel.", "bad");
+        return;
+      }
+
+      // If currently swiping, switch to typing
+      if (path.length){
+        path = [];
+      }
+      ui.mode.textContent = "Type";
+      typedWord += ch;
+      refreshCurrentDisplay();
+      setMessage("", "");
+    }
   });
 
   // boot
