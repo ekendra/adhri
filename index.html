@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calm Word Garden</title>
+  <style>
+    :root{
+      --bg1:#06101a;
+      --bg2:#0b2a2a;
+      --card:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.16);
+      --text:#eef6ff;
+      --muted:rgba(238,246,255,.75);
+      --good:#39d98a;
+      --bad:#ff5c5c;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 10%, #173a6b 0%, rgba(23,58,107,0) 55%),
+        radial-gradient(1000px 700px at 85% 25%, #1a6b55 0%, rgba(26,107,85,0) 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      display:grid;
+      place-items:center;
+      padding:18px;
+    }
+    .wrap{ width:min(980px, 98vw); }
+    .top{
+      display:flex; gap:12px; flex-wrap:wrap;
+      justify-content:space-between; align-items:center;
+      margin-bottom:12px;
+    }
+    .panel{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:16px;
+      padding:12px 14px;
+      backdrop-filter: blur(10px);
+    }
+    .stats{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .tag{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06);
+      font-weight:650;
+    }
+    .btns{ display:flex; gap:10px; flex-wrap:wrap; }
+    button{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.10);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    button.primary{
+      background:rgba(57,217,138,.20);
+      border-color:rgba(57,217,138,.45);
+    }
+    button:active{ transform: translateY(1px); }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:12px;
+    }
+    @media (max-width: 860px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    .title{
+      font-size:1.08rem; font-weight:800; margin:0 0 6px 0;
+    }
+    .sub{ color:var(--muted); font-size:.95rem; margin:0; line-height:1.35; }
+    .wordbox{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.18);
+    }
+    .current{
+      font-size:1.25rem;
+      letter-spacing:.08em;
+      font-weight:900;
+      min-height: 1.4em;
+    }
+    .msg{ font-weight:700; }
+    .msg.good{ color:var(--good); }
+    .msg.bad{ color:var(--bad); }
+    .wheelWrap{
+      display:grid;
+      place-items:center;
+      padding:10px;
+    }
+    canvas{
+      width:min(520px, 92vw);
+      height:auto;
+      border-radius:18px;
+      border:1px solid var(--stroke);
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.10), rgba(0,0,0,.12));
+      touch-action:none;
+    }
+    .list{
+      display:grid;
+      gap:8px;
+      margin-top:10px;
+      max-height: 360px;
+      overflow:auto;
+      padding-right:4px;
+    }
+    .item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:700;
+    }
+    .item .w{ letter-spacing:.06em; }
+    .item.done{ border-color: rgba(57,217,138,.45); background: rgba(57,217,138,.10); }
+    .kbd{
+      font-weight:800;
+      padding:2px 8px;
+      border-radius:10px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06);
+    }
+    .footerNote{ margin-top:10px; color:var(--muted); font-size:.92rem; line-height:1.35; }
+    a{ color:#b9dcff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="panel">
+        <div class="stats">
+          <span class="tag">Level: <span id="level">1</span></span>
+          <span class="tag">Found: <span id="found">0</span>/<span id="total">0</span></span>
+          <span class="tag">Stars: <span id="stars">0</span></span>
+          <span class="tag">Best Streak: <span id="best">0</span></span>
+        </div>
+      </div>
+      <div class="panel btns">
+        <button class="primary" id="newLevelBtn">New Level</button>
+        <button id="shuffleBtn">Shuffle Letters</button>
+        <button id="hintBtn">Hint</button>
+        <button id="resetBtn">Reset Progress</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <p class="title">Calm Word Garden</p>
+        <p class="sub">
+          Drag across letters to make words. Release to submit.
+          Use <span class="kbd">Hint</span> if you get stuck.
+        </p>
+
+        <div class="wordbox">
+          <div class="current" id="currentWord"></div>
+          <div class="msg" id="msg"></div>
+        </div>
+
+        <div class="wheelWrap">
+          <canvas id="wheel" width="640" height="520"></canvas>
+        </div>
+
+        <div class="footerNote">
+          Tip: Kids can practice spelling by saying the letters out loud as they swipe.
+          This game stores progress in the browser only (no account needed).
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="title">Target Words</p>
+        <p class="sub">Find all words for this level to unlock the next one.</p>
+        <div class="list" id="targets"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // Educational note: This is an original implementation inspired by common word-swipe mechanics.
+
+  // Small built-in "kid friendly" word sets. You can expand these easily.
+  const LEVELS = [
+    { letters: "G A R D E N", targets: ["GARDEN","RANGE","GRADE","ANGER","EARN","NEAR","RAN","AGE","DEN"] },
+    { letters: "S T O R Y",   targets: ["STORY","SORT","ROTS","TOYS","TRY","TOY","SOT"] },
+    { letters: "C L O U D",   targets: ["CLOUD","COULD","COLD","LOUD","DUO","OLD","COD"] },
+    { letters: "P L A N E T", targets: ["PLANET","PLATE","PETAL","LEAPT","PANEL","LENT","TAP","NET","PAN"] },
+    { letters: "F R I E N D", targets: ["FRIEND","FINED","FRIED","RINED","FIRE","RIDE","DINE","END","FIN"] },
+    { letters: "M U S I C",   targets: ["MUSIC","SUM","SIM","SIC","CUM"] }
+  ];
+
+  // A tiny "allowed words" list to prevent nonsense. Keep this kid-safe and simple.
+  // For a bigger dictionary, you would load a word list file.
+  const ALLOWED = new Set(LEVELS.flatMap(l => l.targets));
+
+  const ui = {
+    level: document.getElementById("level"),
+    found: document.getElementById("found"),
+    total: document.getElementById("total"),
+    stars: document.getElementById("stars"),
+    best: document.getElementById("best"),
+    current: document.getElementById("currentWord"),
+    msg: document.getElementById("msg"),
+    targets: document.getElementById("targets"),
+    newLevelBtn: document.getElementById("newLevelBtn"),
+    shuffleBtn: document.getElementById("shuffleBtn"),
+    hintBtn: document.getElementById("hintBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    canvas: document.getElementById("wheel")
+  };
+
+  const ctx = ui.canvas.getContext("2d");
+  const W = () => ui.canvas.width;
+  const H = () => ui.canvas.height;
+
+  const storeKey = "calm_word_garden_v1";
+  const loadState = () => {
+    try { return JSON.parse(localStorage.getItem(storeKey) || "null"); }
+    catch { return null; }
+  };
+  const saveState = () => localStorage.setItem(storeKey, JSON.stringify(state));
+
+  const state = loadState() || {
+    levelIndex: 0,
+    stars: 0,
+    bestStreak: 0,
+    currentStreak: 0,
+    foundByLevel: {} // levelIndex -> array of words
+  };
+
+  let letters = [];
+  let targets = [];
+  let found = new Set();
+  let hintUsed = false;
+
+  // Wheel geometry
+  let nodes = [];         // letter positions
+  let path = [];          // selected node indices
+  let dragging = false;
+  let pointer = { x: W()/2, y: H()/2 };
+
+  function setMessage(text, kind) {
+    ui.msg.textContent = text || "";
+    ui.msg.className = "msg" + (kind ? " " + kind : "");
+  }
+
+  function shuffleArray(arr) {
+    for (let i=arr.length-1; i>0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function normalizeWord(w){ return (w || "").toUpperCase().replace(/[^A-Z]/g, ""); }
+
+  function getLevel(i){
+    return LEVELS[Math.max(0, Math.min(LEVELS.length-1, i))];
+  }
+
+  function loadLevel(index, fresh=false){
+    state.levelIndex = Math.max(0, Math.min(LEVELS.length-1, index));
+    const lvl = getLevel(state.levelIndex);
+
+    letters = lvl.letters.split(/\s+/).map(x => x.trim()).filter(Boolean);
+    targets = lvl.targets.map(normalizeWord);
+
+    const already = state.foundByLevel[state.levelIndex] || [];
+    found = new Set(already.map(normalizeWord));
+
+    hintUsed = false;
+    path = [];
+    dragging = false;
+
+    layoutNodes();
+    renderTargets();
+    syncUI();
+    setMessage("Make a word.", "");
+    if (fresh) saveState();
+    draw();
+  }
+
+  function syncUI(){
+    ui.level.textContent = String(state.levelIndex + 1);
+    ui.stars.textContent = String(state.stars);
+    ui.best.textContent = String(state.bestStreak);
+    ui.total.textContent = String(targets.length);
+    ui.found.textContent = String(found.size);
+  }
+
+  function renderTargets(){
+    ui.targets.innerHTML = "";
+    targets.forEach(w => {
+      const row = document.createElement("div");
+      row.className = "item" + (found.has(w) ? " done" : "");
+      const left = document.createElement("div");
+      left.className = "w";
+      left.textContent = found.has(w) ? w : "•".repeat(w.length);
+      const right = document.createElement("div");
+      right.textContent = found.has(w) ? "✓" : "";
+      row.appendChild(left);
+      row.appendChild(right);
+      ui.targets.appendChild(row);
+    });
+  }
+
+  function layoutNodes(){
+    const cx = W()/2, cy = H()/2 + 20;
+    const radius = 170;
+    nodes = [];
+    const n = letters.length;
+    for (let i=0; i<n; i++){
+      const a = (Math.PI*2) * (i/n) - Math.PI/2;
+      nodes.push({
+        x: cx + Math.cos(a) * radius,
+        y: cy + Math.sin(a) * radius,
+        r: 34,
+        letter: letters[i],
+        i
+      });
+    }
+  }
+
+  function wordFromPath(){
+    return path.map(idx => nodes[idx].letter).join("");
+  }
+
+  function hitNode(x,y){
+    for (const node of nodes){
+      const dx = x - node.x;
+      const dy = y - node.y;
+      if (Math.hypot(dx,dy) <= node.r) return node.i;
+    }
+    return null;
+  }
+
+  function addToPath(idx){
+    if (idx === null) return;
+    if (path.includes(idx)) return;
+    path.push(idx);
+    ui.current.textContent = wordFromPath();
+  }
+
+  function clearPath(){
+    path = [];
+    ui.current.textContent = "";
+  }
+
+  function giveStars(amount){
+    state.stars += amount;
+    syncUI();
+    saveState();
+  }
+
+  function submitWord(){
+    const w = normalizeWord(wordFromPath());
+    if (!w) return;
+
+    if (!ALLOWED.has(w)) {
+      state.currentStreak = 0;
+      setMessage("Not in this garden.", "bad");
+      clearPath();
+      saveState();
+      return;
+    }
+
+    if (!targets.includes(w)) {
+      state.currentStreak = 0;
+      setMessage("Good word, but not a target.", "bad");
+      clearPath();
+      saveState();
+      return;
+    }
+
+    if (found.has(w)) {
+      setMessage("Already found.", "bad");
+      clearPath();
+      return;
+    }
+
+    found.add(w);
+    state.foundByLevel[state.levelIndex] = Array.from(found);
+    state.currentStreak += 1;
+    state.bestStreak = Math.max(state.bestStreak, state.currentStreak);
+
+    const base = 10;
+    const bonus = Math.min(20, (w.length - 2) * 2);
+    const streakBonus = Math.min(15, state.currentStreak * 2);
+    const hintPenalty = hintUsed ? 4 : 0;
+
+    const earned = Math.max(3, base + bonus + streakBonus - hintPenalty);
+    giveStars(earned);
+
+    setMessage("Nice! +" + earned + " stars", "good");
+    renderTargets();
+    syncUI();
+    clearPath();
+
+    if (found.size === targets.length){
+      setTimeout(() => {
+        setMessage("Level complete. New level unlocked.", "good");
+        if (state.levelIndex < LEVELS.length - 1){
+          loadLevel(state.levelIndex + 1, true);
+        }
+      }, 600);
+    } else {
+      saveState();
+    }
+  }
+
+  function hint(){
+    // Reveal one letter position for the next not-yet-found target word.
+    const remaining = targets.filter(w => !found.has(w));
+    if (!remaining.length) return;
+    hintUsed = true;
+    const pick = remaining[Math.floor(Math.random()*remaining.length)];
+    setMessage("Hint: A missing word has " + pick.length + " letters.", "");
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W(),H());
+
+    // soft background sparkles
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    for (let i=0; i<60; i++){
+      const x = (i*97)%W();
+      const y = (i*57)%H();
+      ctx.beginPath();
+      ctx.arc(x,y, (i%3)+1, 0, Math.PI*2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // line path
+    if (path.length){
+      ctx.save();
+      ctx.lineWidth = 10;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(185,220,255,.55)";
+      ctx.beginPath();
+      const first = nodes[path[0]];
+      ctx.moveTo(first.x, first.y);
+      for (let k=1; k<path.length; k++){
+        const p = nodes[path[k]];
+        ctx.lineTo(p.x, p.y);
+      }
+      if (dragging){
+        ctx.lineTo(pointer.x, pointer.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // nodes
+    for (const node of nodes){
+      const selected = path.includes(node.i);
+
+      // outer
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.r, 0, Math.PI*2);
+      ctx.fillStyle = selected ? "rgba(57,217,138,.20)" : "rgba(255,255,255,.10)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = selected ? "rgba(57,217,138,.55)" : "rgba(255,255,255,.18)";
+      ctx.stroke();
+
+      // inner glow
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.r-8, 0, Math.PI*2);
+      ctx.fillStyle = selected ? "rgba(57,217,138,.12)" : "rgba(0,0,0,.15)";
+      ctx.fill();
+
+      // letter
+      ctx.save();
+      ctx.fillStyle = "rgba(238,246,255,.95)";
+      ctx.font = "900 26px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(node.letter, node.x, node.y+1);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function canvasPoint(evt){
+    const rect = ui.canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left) * (ui.canvas.width / rect.width);
+    const y = (evt.clientY - rect.top) * (ui.canvas.height / rect.height);
+    return { x, y };
+  }
+
+  function startDrag(p){
+    dragging = true;
+    pointer = p;
+    const idx = hitNode(p.x, p.y);
+    if (idx !== null){
+      addToPath(idx);
+      setMessage("", "");
+    }
+  }
+
+  function moveDrag(p){
+    if (!dragging) return;
+    pointer = p;
+    const idx = hitNode(p.x, p.y);
+    if (idx !== null){
+      addToPath(idx);
+    }
+  }
+
+  function endDrag(){
+    if (!dragging) return;
+    dragging = false;
+    submitWord();
+  }
+
+  // events
+  ui.canvas.addEventListener("pointerdown", (e) => {
+    ui.canvas.setPointerCapture(e.pointerId);
+    startDrag(canvasPoint(e));
+  });
+  ui.canvas.addEventListener("pointermove", (e) => moveDrag(canvasPoint(e)));
+  ui.canvas.addEventListener("pointerup", () => endDrag());
+  ui.canvas.addEventListener("pointercancel", () => endDrag());
+
+  ui.shuffleBtn.addEventListener("click", () => {
+    shuffleArray(letters);
+    const lvl = getLevel(state.levelIndex);
+    lvl.letters = letters.join(" ");
+    layoutNodes();
+    setMessage("Letters shuffled.", "");
+  });
+
+  ui.hintBtn.addEventListener("click", () => hint());
+
+  ui.newLevelBtn.addEventListener("click", () => {
+    const next = (state.levelIndex + 1) % LEVELS.length;
+    loadLevel(next, true);
+  });
+
+  ui.resetBtn.addEventListener("click", () => {
+    localStorage.removeItem(storeKey);
+    location.reload();
+  });
+
+  // boot
+  loadLevel(state.levelIndex, false);
+  draw();
+})();
+</script>
+</body>
+</html>
