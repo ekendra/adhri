@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calm Word Garden</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#06101a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
   <style>
     :root{
       --bg1:#06101a;
@@ -17,16 +23,12 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
     body{
-      margin:0;
-      min-height:100vh;
-      color:var(--text);
+      margin:0; min-height:100vh; color:var(--text);
       background:
         radial-gradient(1200px 800px at 20% 10%, #173a6b 0%, rgba(23,58,107,0) 55%),
         radial-gradient(1000px 700px at 85% 25%, #1a6b55 0%, rgba(26,107,85,0) 60%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
-      display:grid;
-      place-items:center;
-      padding:18px;
+      display:grid; place-items:center; padding:18px;
     }
     .wrap{ width:min(980px, 98vw); }
     .top{
@@ -43,8 +45,7 @@
     }
     .stats{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .tag{
-      padding:6px 10px;
-      border-radius:999px;
+      padding:6px 10px; border-radius:999px;
       border:1px solid var(--stroke);
       background:rgba(255,255,255,.06);
       font-weight:650;
@@ -78,85 +79,92 @@
     @media (max-width: 860px){
       .grid{ grid-template-columns: 1fr; }
     }
-    .title{
-      font-size:1.08rem; font-weight:800; margin:0 0 6px 0;
-    }
+    .title{ font-size:1.08rem; font-weight:800; margin:0 0 6px 0; }
     .sub{ color:var(--muted); font-size:.95rem; margin:0; line-height:1.35; }
     .wordbox{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--stroke);
+      margin-top:10px; padding:10px 12px;
+      border-radius:14px; border:1px solid var(--stroke);
       background:rgba(0,0,0,.18);
     }
     .current{
-      font-size:1.25rem;
-      letter-spacing:.08em;
-      font-weight:900;
-      min-height: 1.4em;
-      word-break: break-word;
+      font-size:1.25rem; letter-spacing:.08em; font-weight:900;
+      min-height: 1.4em; word-break: break-word;
     }
     .msg{ font-weight:700; }
     .msg.good{ color:var(--good); }
     .msg.bad{ color:var(--bad); }
+
     .controls{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:10px;
-      align-items:center;
-      justify-content:space-between;
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:10px; align-items:center; justify-content:space-between;
     }
     .controls .left, .controls .right{ display:flex; gap:10px; flex-wrap:wrap; }
-    .hintline{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:.92rem;
-      line-height:1.35;
-    }
-    .wheelWrap{
-      display:grid;
-      place-items:center;
-      padding:10px;
-    }
+
+    .hintline{ margin-top:8px; color:var(--muted); font-size:.92rem; line-height:1.35; }
+
+    .wheelWrap{ display:grid; place-items:center; padding:10px; }
     canvas{
-      width:min(520px, 92vw);
-      height:auto;
-      border-radius:18px;
-      border:1px solid var(--stroke);
+      width:min(520px, 92vw); height:auto;
+      border-radius:18px; border:1px solid var(--stroke);
       background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.10), rgba(0,0,0,.12));
       touch-action:none;
     }
+
     .list{
-      display:grid;
-      gap:8px;
-      margin-top:10px;
-      max-height: 360px;
-      overflow:auto;
-      padding-right:4px;
+      display:grid; gap:8px; margin-top:10px;
+      max-height: 240px; overflow:auto; padding-right:4px;
     }
     .item{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
       border:1px solid var(--stroke);
       background:rgba(255,255,255,.06);
-      border-radius:14px;
-      padding:10px 12px;
-      font-weight:700;
+      border-radius:14px; padding:10px 12px; font-weight:700;
     }
     .item .w{ letter-spacing:.06em; }
     .item.done{ border-color: rgba(57,217,138,.45); background: rgba(57,217,138,.10); }
     .kbd{
-      font-weight:800;
-      padding:2px 8px;
-      border-radius:10px;
-      border:1px solid var(--stroke);
-      background:rgba(255,255,255,.06);
+      font-weight:800; padding:2px 8px; border-radius:10px;
+      border:1px solid var(--stroke); background:rgba(255,255,255,.06);
     }
+
     .footerNote{ margin-top:10px; color:var(--muted); font-size:.92rem; line-height:1.35; }
+
+    /* Leaderboard */
+    .lbRow{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .lbList{ display:grid; gap:8px; margin-top:10px; }
+    .lbItem{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      border:1px solid var(--stroke); background:rgba(255,255,255,.06);
+      border-radius:14px; padding:10px 12px; font-weight:700;
+    }
+    .lbItem small{ color:var(--muted); font-weight:600; }
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      display:none; place-items:center; padding:18px;
+    }
+    .modal{
+      width:min(520px, 96vw);
+      background:rgba(10,16,32,.92);
+      border:1px solid var(--stroke);
+      border-radius:16px;
+      padding:14px;
+      backdrop-filter: blur(12px);
+    }
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+      font-size:1rem;
+      outline:none;
+      box-sizing:border-box;
+      margin-top:10px;
+    }
   </style>
 </head>
 <body>
@@ -164,6 +172,7 @@
     <div class="top">
       <div class="panel">
         <div class="stats">
+          <span class="tag">Player: <span id="playerName">Guest</span></span>
           <span class="tag">Level: <span id="level">1</span></span>
           <span class="tag">Found: <span id="found">0</span>/<span id="total">0</span></span>
           <span class="tag">Stars: <span id="stars">0</span></span>
@@ -174,6 +183,7 @@
         <button class="primary" id="newLevelBtn">New Level</button>
         <button id="shuffleBtn">Shuffle Letters</button>
         <button id="hintBtn">Hint</button>
+        <button id="renameBtn">Change Name</button>
         <button class="danger" id="resetBtn">Reset Progress</button>
       </div>
     </div>
@@ -183,8 +193,7 @@
         <p class="title">Calm Word Garden</p>
         <p class="sub">
           Make words by <b>swiping</b>, <b>tapping letters</b>, or <b>typing</b>.
-          Submit with <span class="kbd">Enter</span> or the Submit button.
-          Remove with <span class="kbd">Backspace</span>.
+          Submit with <span class="kbd">Enter</span>. Remove with <span class="kbd">Backspace</span>.
         </p>
 
         <div class="wordbox">
@@ -207,23 +216,63 @@
           <canvas id="wheel" width="640" height="520"></canvas>
         </div>
 
-        <div class="footerNote">
-          Tip: For younger kids, start with 3 to 4 letter levels first. This game stores progress in the browser only.
-        </div>
+        <div class="footerNote" id="pwaNote"></div>
       </div>
 
       <div class="panel">
         <p class="title">Target Words</p>
         <p class="sub">Find all words for this level to unlock the next one.</p>
         <div class="list" id="targets"></div>
+
+        <p class="title" style="margin-top:14px;">Leaderboard (This Device)</p>
+        <p class="sub">Top scores are stored locally on this device.</p>
+        <div class="lbRow" style="margin-top:10px;">
+          <button id="saveScoreBtn" class="primary">Save Score</button>
+          <button id="clearLbBtn" class="danger">Clear Leaderboard</button>
+        </div>
+        <div class="lbList" id="leaderboard"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Name modal -->
+  <div class="modalBack" id="nameModalBack">
+    <div class="modal">
+      <p class="title">Player Name</p>
+      <p class="sub">Type a name for the leaderboard. Example: Aanya, Aviv, Mom.</p>
+      <input id="nameInput" maxlength="18" placeholder="Enter name..." autocomplete="nickname" />
+      <div class="controls" style="margin-top:12px;">
+        <div class="left">
+          <button id="nameCancelBtn">Cancel</button>
+          <button class="primary" id="nameSaveBtn">Save</button>
+        </div>
+      </div>
+      <div class="hintline">Privacy: name stays on this device only.</div>
     </div>
   </div>
 
 <script>
 (() => {
-  // Original, kid-safe word builder. Inspired by common word mechanics, not a clone.
+  /* =======================
+     PWA registration
+  ======================= */
+  const pwaNote = document.getElementById("pwaNote");
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", async () => {
+      try {
+        await navigator.serviceWorker.register("./sw.js");
+        pwaNote.textContent = "PWA ready: you can install this game from your browser menu (Add to Home Screen).";
+      } catch {
+        pwaNote.textContent = "PWA note: service worker registration failed.";
+      }
+    });
+  } else {
+    pwaNote.textContent = "PWA note: your browser does not support offline install features.";
+  }
 
+  /* =======================
+     Game data
+  ======================= */
   const LEVELS = [
     { letters: "G A R D E N", targets: ["GARDEN","RANGE","GRADE","ANGER","EARN","NEAR","RAN","AGE","DEN"] },
     { letters: "S T O R Y",   targets: ["STORY","SORT","ROTS","TOYS","TRY","TOY","SOT"] },
@@ -232,10 +281,13 @@
     { letters: "F R I E N D", targets: ["FRIEND","FINED","FRIED","RINED","FIRE","RIDE","DINE","END","FIN"] },
     { letters: "M U S I C",   targets: ["MUSIC","SUM","SIM","SIC","CUM"] }
   ];
-
   const ALLOWED = new Set(LEVELS.flatMap(l => l.targets.map(w => w.toUpperCase())));
 
+  /* =======================
+     UI refs
+  ======================= */
   const ui = {
+    playerName: document.getElementById("playerName"),
     level: document.getElementById("level"),
     found: document.getElementById("found"),
     total: document.getElementById("total"),
@@ -246,57 +298,177 @@
     targets: document.getElementById("targets"),
     hintline: document.getElementById("hintline"),
     mode: document.getElementById("mode"),
+    leaderboard: document.getElementById("leaderboard"),
+
     newLevelBtn: document.getElementById("newLevelBtn"),
     shuffleBtn: document.getElementById("shuffleBtn"),
     hintBtn: document.getElementById("hintBtn"),
+    renameBtn: document.getElementById("renameBtn"),
     resetBtn: document.getElementById("resetBtn"),
     clearBtn: document.getElementById("clearBtn"),
     submitBtn: document.getElementById("submitBtn"),
-    canvas: document.getElementById("wheel")
+    saveScoreBtn: document.getElementById("saveScoreBtn"),
+    clearLbBtn: document.getElementById("clearLbBtn"),
+
+    canvas: document.getElementById("wheel"),
+
+    nameModalBack: document.getElementById("nameModalBack"),
+    nameInput: document.getElementById("nameInput"),
+    nameCancelBtn: document.getElementById("nameCancelBtn"),
+    nameSaveBtn: document.getElementById("nameSaveBtn"),
   };
 
   const ctx = ui.canvas.getContext("2d");
   const W = () => ui.canvas.width;
   const H = () => ui.canvas.height;
 
-  const storeKey = "calm_word_garden_v2";
-  const loadState = () => {
-    try { return JSON.parse(localStorage.getItem(storeKey) || "null"); }
-    catch { return null; }
-  };
-  const saveState = () => localStorage.setItem(storeKey, JSON.stringify(state));
+  /* =======================
+     Storage
+  ======================= */
+  const storeKey = "calm_word_garden_v3";
+  const lbKey = "calm_word_garden_leaderboard_v1";
+  const nameKey = "calm_word_garden_player_name";
 
-  const state = loadState() || {
+  const loadJSON = (k, fallback) => {
+    try { return JSON.parse(localStorage.getItem(k) || "null") ?? fallback; }
+    catch { return fallback; }
+  };
+  const saveJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+  const state = loadJSON(storeKey, {
     levelIndex: 0,
     stars: 0,
     bestStreak: 0,
     currentStreak: 0,
-    foundByLevel: {} // levelIndex -> array of words
-  };
+    foundByLevel: {}
+  });
 
+  let leaderboard = loadJSON(lbKey, []); // {name, stars, level, dateISO}
+
+  function saveState(){ saveJSON(storeKey, state); }
+  function saveLeaderboard(){ saveJSON(lbKey, leaderboard); }
+
+  /* =======================
+     Player name modal
+  ======================= */
+  function sanitizeName(s){
+    const trimmed = (s || "").trim();
+    // Keep it kid-safe by allowing letters/numbers/spaces only.
+    const cleaned = trimmed.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 18);
+    return cleaned || "Guest";
+  }
+  function getPlayerName(){
+    return sanitizeName(localStorage.getItem(nameKey) || "Guest");
+  }
+  function setPlayerName(n){
+    const name = sanitizeName(n);
+    localStorage.setItem(nameKey, name);
+    ui.playerName.textContent = name;
+  }
+  function openNameModal(){
+    ui.nameModalBack.style.display = "grid";
+    ui.nameInput.value = getPlayerName() === "Guest" ? "" : getPlayerName();
+    ui.nameInput.focus();
+  }
+  function closeNameModal(){
+    ui.nameModalBack.style.display = "none";
+  }
+
+  ui.renameBtn.addEventListener("click", openNameModal);
+  ui.nameCancelBtn.addEventListener("click", closeNameModal);
+  ui.nameSaveBtn.addEventListener("click", () => {
+    setPlayerName(ui.nameInput.value);
+    closeNameModal();
+    renderLeaderboard();
+  });
+  ui.nameModalBack.addEventListener("click", (e) => {
+    if (e.target === ui.nameModalBack) closeNameModal();
+  });
+
+  // First run: prompt for name
+  setPlayerName(getPlayerName());
+  if (getPlayerName() === "Guest") {
+    // Gentle prompt, not blocking gameplay
+    setTimeout(openNameModal, 350);
+  }
+
+  /* =======================
+     Leaderboard logic
+  ======================= */
+  function renderLeaderboard(){
+    ui.leaderboard.innerHTML = "";
+    const top = [...leaderboard]
+      .sort((a,b) => (b.stars - a.stars) || (b.level - a.level))
+      .slice(0, 10);
+
+    if (!top.length){
+      const empty = document.createElement("div");
+      empty.className = "lbItem";
+      empty.innerHTML = `<div>No scores yet.</div><small>Tap “Save Score”</small>`;
+      ui.leaderboard.appendChild(empty);
+      return;
+    }
+
+    top.forEach((row, idx) => {
+      const div = document.createElement("div");
+      div.className = "lbItem";
+      const when = new Date(row.dateISO).toLocaleDateString();
+      div.innerHTML = `
+        <div>#${idx+1} ${row.name} <small>(Lvl ${row.level})</small></div>
+        <div>${row.stars} ⭐ <small>${when}</small></div>
+      `;
+      ui.leaderboard.appendChild(div);
+    });
+  }
+
+  function saveScoreToLeaderboard(){
+    const entry = {
+      name: getPlayerName(),
+      stars: state.stars,
+      level: state.levelIndex + 1,
+      dateISO: new Date().toISOString()
+    };
+    leaderboard.push(entry);
+
+    // Keep only best 30 entries to avoid unbounded growth
+    leaderboard = leaderboard
+      .sort((a,b) => (b.stars - a.stars) || (b.level - a.level))
+      .slice(0, 30);
+
+    saveLeaderboard();
+    renderLeaderboard();
+    setMessage("Score saved to leaderboard.", "good");
+  }
+
+  ui.saveScoreBtn.addEventListener("click", saveScoreToLeaderboard);
+  ui.clearLbBtn.addEventListener("click", () => {
+    leaderboard = [];
+    saveLeaderboard();
+    renderLeaderboard();
+    setMessage("Leaderboard cleared.", "");
+  });
+
+  /* =======================
+     Game mechanics (same as before, with tap/type/swipe)
+  ======================= */
   let letters = [];
   let targets = [];
   let found = new Set();
   let hintUsed = false;
 
-  // Wheel geometry and selection
-  let nodes = [];         // letter positions
-  let path = [];          // selected node indices (touch mode)
+  let nodes = [];
+  let path = [];
   let dragging = false;
   let pointer = { x: W()/2, y: H()/2 };
 
-  // Typed/tapped word track
   let typedWord = "";
-  let typedNodeRefs = []; // node indices used for tap-building (so Clear can unhighlight nicely)
+  let typedNodeRefs = [];
 
   function setMessage(text, kind) {
     ui.msg.textContent = text || "";
     ui.msg.className = "msg" + (kind ? " " + kind : "");
   }
-
-  function setHintLine(text){
-    ui.hintline.textContent = text || "";
-  }
+  function setHintLine(text){ ui.hintline.textContent = text || ""; }
 
   function shuffleArray(arr) {
     for (let i=arr.length-1; i>0; i--){
@@ -305,39 +477,8 @@
     }
     return arr;
   }
-
   function normalizeWord(w){ return (w || "").toUpperCase().replace(/[^A-Z]/g, ""); }
-
-  function getLevel(i){
-    return LEVELS[Math.max(0, Math.min(LEVELS.length-1, i))];
-  }
-
-  function loadLevel(index, fresh=false){
-    state.levelIndex = Math.max(0, Math.min(LEVELS.length-1, index));
-    const lvl = getLevel(state.levelIndex);
-
-    letters = lvl.letters.split(/\s+/).map(x => x.trim()).filter(Boolean);
-    targets = lvl.targets.map(normalizeWord);
-
-    const already = state.foundByLevel[state.levelIndex] || [];
-    found = new Set(already.map(normalizeWord));
-
-    hintUsed = false;
-    dragging = false;
-    pointer = { x: W()/2, y: H()/2 };
-    path = [];
-    typedWord = "";
-    typedNodeRefs = [];
-
-    layoutNodes();
-    renderTargets();
-    syncUI();
-    setMessage("Make a word.", "");
-    setHintLine("Input: swipe, tap letters, or type. Enter submits. Backspace removes.");
-    ui.mode.textContent = "Touch/Type";
-    if (fresh) saveState();
-    draw();
-  }
+  function getLevel(i){ return LEVELS[Math.max(0, Math.min(LEVELS.length-1, i))]; }
 
   function syncUI(){
     ui.level.textContent = String(state.levelIndex + 1);
@@ -370,32 +511,19 @@
     const n = letters.length;
     for (let i=0; i<n; i++){
       const a = (Math.PI*2) * (i/n) - Math.PI/2;
-      nodes.push({
-        x: cx + Math.cos(a) * radius,
-        y: cy + Math.sin(a) * radius,
-        r: 34,
-        letter: letters[i],
-        i
-      });
+      nodes.push({ x: cx + Math.cos(a) * radius, y: cy + Math.sin(a) * radius, r: 34, letter: letters[i], i });
     }
   }
 
   function currentWord(){
-    // If dragging/touch-path is active or has nodes, show that.
     if (path.length) return normalizeWord(path.map(idx => nodes[idx].letter).join(""));
-    // Otherwise show typed/tapped word.
     return normalizeWord(typedWord);
   }
-
-  function refreshCurrentDisplay(){
-    const w = currentWord();
-    ui.current.textContent = w;
-  }
+  function refreshCurrentDisplay(){ ui.current.textContent = currentWord(); }
 
   function hitNode(x,y){
     for (const node of nodes){
-      const dx = x - node.x;
-      const dy = y - node.y;
+      const dx = x - node.x, dy = y - node.y;
       if (Math.hypot(dx,dy) <= node.r) return node.i;
     }
     return null;
@@ -405,17 +533,16 @@
     if (idx === null) return;
     if (path.includes(idx)) return;
     path.push(idx);
-    typedWord = "";            // prioritize swipe path
+    typedWord = "";
     typedNodeRefs = [];
     refreshCurrentDisplay();
   }
 
   function tapAddLetter(idx){
-    // Tap mode: append letter (allow repeating letters only if duplicates exist in wheel)
     if (idx === null) return;
     typedWord += nodes[idx].letter;
     typedNodeRefs.push(idx);
-    path = []; // prioritize tap word
+    path = [];
     dragging = false;
     ui.mode.textContent = "Tap/Type";
     refreshCurrentDisplay();
@@ -459,7 +586,6 @@
       saveState();
       return;
     }
-
     if (!targets.includes(w)) {
       state.currentStreak = 0;
       setMessage("Good word, but not a target.", "bad");
@@ -467,7 +593,6 @@
       saveState();
       return;
     }
-
     if (found.has(w)) {
       setMessage("Already found.", "bad");
       clearAll();
@@ -483,10 +608,9 @@
     const bonus = Math.min(20, (w.length - 2) * 2);
     const streakBonus = Math.min(15, state.currentStreak * 2);
     const hintPenalty = hintUsed ? 4 : 0;
-
     const earned = Math.max(3, base + bonus + streakBonus - hintPenalty);
-    giveStars(earned);
 
+    giveStars(earned);
     setMessage("Nice! +" + earned + " stars", "good");
     renderTargets();
     syncUI();
@@ -516,7 +640,6 @@
   function draw(){
     ctx.clearRect(0,0,W(),H());
 
-    // background sparkles
     ctx.save();
     ctx.globalAlpha = 0.15;
     for (let i=0; i<60; i++){
@@ -529,7 +652,6 @@
     }
     ctx.restore();
 
-    // path line (only for swipe)
     if (path.length){
       ctx.save();
       ctx.lineWidth = 10;
@@ -549,10 +671,9 @@
       ctx.restore();
     }
 
-    // nodes
     for (const node of nodes){
       const selectedSwipe = path.includes(node.i);
-      const selectedTap = typedNodeRefs.includes(node.i) && !path.length; // show tap selection when not swiping
+      const selectedTap = typedNodeRefs.includes(node.i) && !path.length;
       const selected = selectedSwipe || selectedTap;
 
       ctx.beginPath();
@@ -587,7 +708,6 @@
     return { x, y };
   }
 
-  // Pointer events: swipe and also tap
   let downPoint = null;
   ui.canvas.addEventListener("pointerdown", (e) => {
     ui.canvas.setPointerCapture(e.pointerId);
@@ -598,7 +718,6 @@
 
     const idx = hitNode(p.x, p.y);
     if (idx !== null){
-      // Start swipe path (but we will treat it as a tap if user doesn't move)
       addToPath(idx);
       ui.mode.textContent = "Swipe";
       setMessage("", "");
@@ -609,29 +728,21 @@
     if (!dragging) return;
     const p = canvasPoint(e);
     pointer = p;
-
-    // If user is truly moving, stay in swipe mode
     const idx = hitNode(p.x, p.y);
-    if (idx !== null){
-      addToPath(idx);
-    }
+    if (idx !== null) addToPath(idx);
   });
 
   ui.canvas.addEventListener("pointerup", (e) => {
     const p = canvasPoint(e);
-
-    // Detect a "tap" if movement was tiny and only 1 node was chosen
     const moved = downPoint ? Math.hypot(p.x - downPoint.x, p.y - downPoint.y) : 999;
     const isTap = moved < 10;
 
     dragging = false;
 
     if (isTap){
-      // Convert swipe-start to tap behavior:
-      // If path has at least one node, take its last as tap.
       if (path.length){
         const last = path[path.length - 1];
-        path = []; // clear swipe path
+        path = [];
         tapAddLetter(last);
       } else {
         const idx = hitNode(p.x, p.y);
@@ -641,7 +752,6 @@
       return;
     }
 
-    // Otherwise it was a swipe: submit the swipe word
     submit();
     downPoint = null;
   });
@@ -651,14 +761,12 @@
     downPoint = null;
   });
 
-  // Buttons
   ui.shuffleBtn.addEventListener("click", () => {
     shuffleArray(letters);
     const lvl = getLevel(state.levelIndex);
     lvl.letters = letters.join(" ");
     layoutNodes();
     setMessage("Letters shuffled.", "");
-    setHintLine("Tip: You can type the word too.");
   });
 
   ui.hintBtn.addEventListener("click", () => hint());
@@ -670,47 +778,27 @@
 
   ui.resetBtn.addEventListener("click", () => {
     localStorage.removeItem(storeKey);
+    localStorage.removeItem(lbKey);
     location.reload();
   });
 
   ui.clearBtn.addEventListener("click", () => clearAll());
   ui.submitBtn.addEventListener("click", () => submit());
 
-  // Keyboard typing support
   window.addEventListener("keydown", (e) => {
     const key = e.key;
 
-    if (key === "Enter"){
-      e.preventDefault();
-      submit();
-      return;
-    }
-    if (key === "Backspace"){
-      e.preventDefault();
-      backspace();
-      return;
-    }
-    if (key === "Escape"){
-      e.preventDefault();
-      clearAll();
-      return;
-    }
+    if (key === "Enter"){ e.preventDefault(); submit(); return; }
+    if (key === "Backspace"){ e.preventDefault(); backspace(); return; }
+    if (key === "Escape"){ e.preventDefault(); clearAll(); return; }
 
-    // Accept letters A-Z only
     if (/^[a-zA-Z]$/.test(key)){
       const ch = key.toUpperCase();
-
-      // Optional constraint: only allow letters that exist on this wheel
-      // (this keeps it "level-based" for kids)
       if (!letters.includes(ch)){
         setMessage("That letter is not on the wheel.", "bad");
         return;
       }
-
-      // If currently swiping, switch to typing
-      if (path.length){
-        path = [];
-      }
+      if (path.length) path = [];
       ui.mode.textContent = "Type";
       typedWord += ch;
       refreshCurrentDisplay();
@@ -718,7 +806,35 @@
     }
   });
 
-  // boot
+  function loadLevel(index, fresh=false){
+    state.levelIndex = Math.max(0, Math.min(LEVELS.length-1, index));
+    const lvl = getLevel(state.levelIndex);
+
+    letters = lvl.letters.split(/\s+/).map(x => x.trim()).filter(Boolean);
+    targets = lvl.targets.map(normalizeWord);
+
+    const already = state.foundByLevel[state.levelIndex] || [];
+    found = new Set(already.map(normalizeWord));
+
+    hintUsed = false;
+    dragging = false;
+    pointer = { x: W()/2, y: H()/2 };
+    path = [];
+    typedWord = "";
+    typedNodeRefs = [];
+
+    layoutNodes();
+    renderTargets();
+    syncUI();
+    setMessage("Make a word.", "");
+    setHintLine("Input: swipe, tap letters, or type. Enter submits. Backspace removes.");
+    ui.mode.textContent = "Touch/Type";
+    if (fresh) saveState();
+    draw();
+  }
+
+  // Boot
+  renderLeaderboard();
   loadLevel(state.levelIndex, false);
   draw();
 })();
